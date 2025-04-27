@@ -1,0 +1,7 @@
+- ChangesController imports a library and uses it to call system functions within the export callback
+- ChartGraph instantiates a Chart object which is defined in the UI library that defines all UI components in this project.
+- StaticPanel and InputPanel are two classes defined in the UI library. InputPanel sends a callback when the value within it is overwritten.
+- ChartGraph is a class defined in the UI library that renders a Chart on a window.
+- DocumentDisplayArea is a class defined in the UI library that renders a document on a window.
+- Report Controller works with a system level library to call an export function.
+- AddGuitar and RemoveGuitar methods of Inventory call the SaveGuitars method

@@ -1,0 +1,349 @@
+@startuml
+
+package dataSource
+{
+    +class SaveSystem
+    {
+        -filePath: String
+        +SaveSystem(filePath: String)
+        +SaveGuitarData(data: List<List<String>>): void
+        +LoadGuitarData(): List<List<String>>
+        +SaveInventoryChangeData(List<String>): void
+        +LoadInventoryChangeData(): List<String>
+    }
+}
+
+package domain
+{
+ +interface Observer
+ {
+    +Update():void
+ }
+
+ +class Inventory
+ {
+    +Inventory(saveData: List<List<String>>)
+    -saveSystem: SaveSystem
+    -guitars: List<Guitar>
+    -observers: List<Observer>
+    -changes: List<OperationSummary>
+
+    -LoadGuitars(): void
+    -LoadInventoryChanges(): void
+    +SaveGuitars(): void
+    +SaveInventoryChanges(): void
+
+    +TryAddGuitar(specs: GuitarSpecs, serialNumber: SerialNumber): bool
+    +TryRemoveGuitar(serialNumber: SerialNumber): bool
+    +SearchMatchingGuitars(criteria: SearchCriteria): List<Guitar>
+    +GetGuitars(): List<Guitar>
+    +GetInventoryChanges(): List<OperationSummary>
+    +UpdateGuitar(newSpecs: GuitarSpecs, serialNumber: SerialNumber): void
+    +AddObserver(newObserver: Observer): void
+    +UpdateObservers(): void
+ }
+
+ Inventory -->"*" Observer
+ Inventory --> "*" Guitar
+ Inventory --> "*" OperationSummary
+ Inventory ..> SerialNumber
+ Inventory --> SaveSystem
+ Inventory ..> GuitarSpecs
+ Inventory ..> SearchCriteria
+ Inventory ..> InventoryOperations
+
+ +enum InventoryOperations
+ {
+    +ToString(): String
+    Add,
+    Remove,
+    Update
+ }
+
+ ~class OperationSummary
+  {
+     +OperationSummary(date: String, operation: InventoryOperations, target: Guitar,  optionalUpdatedTarget: Guitar)
+     -{final} date: String
+     -{final} operation: InventoryOperations
+     -{final} target: Guitar
+     -{final} optionalUpdatedTarget: Guitar
+     +{static} SERIALIZE(data: String): OperationSummary
+     +{static} DESERIALIZE(obj: OperationSummary): String
+  }
+  OperationSummary --> Guitar
+  OperationSummary --> InventoryOperations
+
+ +class SearchCriteria
+ {
+    +{static} IS_VALID_SEARCH_CRITERIA(criteria: List<String>): bool
+    +SearchCriteria(criteria: List<String>)
+    +builder: Builder
+    +guitarType: GuitarType
+    +topWood: WoodType
+    +backWood: WoodType
+    +model: String
+ }
+ SearchCriteria --> Builder
+ SearchCriteria --> GuitarType
+ SearchCriteria --> WoodType
+
+ +class Guitar
+ {
+    +Guitar(serialNumber: float, specs: GuitarSpecs)
+    -serialNumber: SerialNumber
+    +specs: GuitarSpecs
+    +IsMatch(criteria: SearchCriteria): bool
+    +GetSerialNumber(): SerialNumber
+    +GetSpecValueStrings(): List<String>
+    +{static} SERIALIZE(guitar: Guitar): List<String>:
+    +{static} DESERIALIZE(data: List<string>): Guitar:
+ }
+ Guitar --> GuitarSpecs
+ Guitar --> SerialNumber
+ Guitar ..> SearchCriteria
+
+ +class GuitarSpecs
+ {
+    +GuitarSpecs(serialNumber: SerialNumber, builder: Builder, guitarType: GuitarType, topWood: WoodType, ackWood: WoodType, price: float, model: String)
+    -serialNumber: SerialNumber
+    +builder: Builder
+    +guitarType: GuitarType
+    +topWood: WoodType
+    +backWood: WoodType
+    +model: String
+    +price: float
+    +IsMatch(specs:GuitarSpecs): bool
+    +{static} GET_GUITAR_PROPERTY_NAME_STRINGS(): List<String>
+    +{static} CAN_STRING_VALUES_CONSTRUCT_SPEC(): bool
+ }
+ GuitarSpecs --> WoodType
+ GuitarSpecs --> Builder
+ GuitarSpecs --> GuitarType
+
+
+    +class SerialNumber
+    {
+        +{static} IS_VALID(serialNumber: float): bool
+        +SerialNumber(serialNumber: float)
+        +{final} serialNumber:float
+    }
+
++enum Builder
+{
+    +{STATIC} IS_VALID(specValueString: String, specType: Builder)
+    Fender,
+    Martin,
+    Gibson
+}
+
++enum GuitarType
+{
+    +{STATIC} IS_VALID(specValueString: String, specType: GuitarType)
+    Acoustic,
+    Electric,
+    Bass
+}
+
++enum WoodType
+{
+    +{STATIC} IS_VALID(specValueString: String, specType: WoodType)
+    Maple,
+    Cedar,
+    Alder,
+    SitkaSpruce
+}
+
+}
+
+package presentation
+{
+ +class Main
+ {
+    -saveFilePath: String
+    +Main()
+ }
+
+Main..>WelcomePage
+Main..>MenuController
+Main..>SaveSystem
+Main..>Inventory
+
+ ~class WelcomePage
+ {
+    +WelcomePage(welcomeMessage: String)
+    -welcomeMessage: String
+    +DisplayMessage(): void
+ }
+
+ ~class GuitarPanel
+ {
+    +GuitarPanel(serialNumber: SerialNumber, indexInList: int)
+    +serialNumber: SerialNumber
+    -displayPanel: Panel
+    -renderDisplayPanel(): void
+    +AddCallback(callback: Runnable): void
+ }
+ GuitarPanel --> SerialNumber
+
+ ~class GuitarList
+ {
+    -guitarPanels: List<GuitarPanel>
+    +AddCallbackForSerialNumber(serialNumber: SerialNumber, callback: Runnable): void
+    +UpdatePanels(List<Guitar>): void
+ }
+ GuitarList -->"*" GuitarPanel
+ GuitarList --> "*" Guitar
+ GuitarList ..> SerialNumber
+
+ ~class MenuView
+ {
+    +MenuView(model: Inventory)
+    -model: Inventory
+
+    +addButton: Button
+    +removeButton: Button
+    +searchButton: Button
+    +confirmButton: Button
+    +backupInventoryDataButton: Button
+    +generateInventoryHistoryButton: Button
+
+    -inputArea: InputTextRegion
+    +DisplayInputArea(): void
+    +ReadFromInputArea(): List<String>
+
+    -operationResults: TextArea
+    +SetOperationResults(resultText: String): void
+
+    +Update(): void
+
+    +guitarList: GuitarList
+    -UpdateGuitarList(): void
+ }
+ MenuView --> Inventory
+ MenuView --> GuitarList
+ MenuView ..|> Observer
+
+ ~class MenuController
+ {
+    +MenuController(model: Inventory)
+    -model: Inventory
+    -view: MenuView
+
+    -DisplayTextInputFieldCallback(textInputForOperation: InputRequiringUIOperations): void
+    -AssignCallbackToConfirmButton(operation: InputRequiringUIOperations): void
+
+    -AddGuitarCallback(): void
+    -RemoveGuitarCallback(): void
+    -SearchGuitarCallback(): void
+    -BackupInventoryDataCallback(): void
+    -GenerateInventoryHistoryAnalysisCallback(): void
+
+    +Update():void
+
+    -UpdateGuitarListCallbacks(): void
+    -GuitarListCallback(guitar: Guitar): void
+ }
+MenuController-->Inventory
+MenuController-->MenuView
+
+ MenuController ..> ChartView
+ MenuController ..> ReportController
+ MenuController ..> GuitarInspectController
+ MenuController ..> InputRequiringUIOperations
+ MenuController ..> Guitar
+ MenuController ..> GuitarSpecs
+ MenuController ..> SearchCriteria
+
+  ~enum InputRequiringUIOperations
+  {
+     Add,
+     Remove,
+     Search,
+  }
+
+
+ ~class ChartView
+ {
+    +ChangesView(model: Inventory)
+    -model: Inventory
+    -chart: ChartGraph
+    +DisplayChartWindow(): void
+ }
+ ChartView --> Inventory
+ ChartView ..>"*" OperationSummary
+
+ ~class ReportView
+ {
+    +ReportView(model: Inventory)
+    -model: Inventory
+    -documentArea: DocumentDisplayArea
+    +exportButton: Button
+    +DisplayReportWindow(): void
+ }
+ ReportView --> Inventory
+ ReportView ..> "*"OperationSummary
+
+
+ ~class ReportController
+ {
+    +ReportController(model: Inventory)
+    -model: Inventory
+    -view: ReportView
+    -AssignExportCallback(): void
+    -ExportCallback(): void
+ }
+ ReportController --> Inventory
+ ReportController --> ReportView
+
+ ~class GuitarInspectView
+ {
+    +GuitarInspectPanel(guitar: Guitar, model: Inventory)
+    -guitarBeingViewed: Guitar
+    -model: Inventory
+
+    -serialNumberPanel: StaticPanel
+    -builderPanel: StaticPanel
+    -topWoodPanel: StaticPanel
+    -backWoodPanel: StaticPanel
+    -pricePanel: StaticPanel
+    -guitarTypePanel: StaticPanel
+
+    +builderValuePanel: InputPanel
+    +topWoodValuePanel: InputPanel
+    +backWoodValuePanel: InputPanel
+    +priceValuePanel: InputPanel
+    +guitarTypeValuePanel: InputPanel
+
+    +updateOperationResults: TextArea
+    +Update(): void
+    -FetchUpdatedGuitarInfo(): void
+    +ReadAllPropertyValues(): List<String>
+ }
+GuitarInspectView ..|> Observer
+GuitarInspectView --> Inventory
+GuitarInspectView --> Guitar
+
+
+ ~class GuitarInspectController
+ {
+    +GuitarInspectController(model: Inventory, guitar: Guitar)
+    -model: Inventory
+    -view: GuitarInspectView
+    -guitarBeingViewed: Guitar
+
+    -UpdatePropertiesCallback(): void
+
+    +Update(): void
+ }
+ GuitarInspectController ..|> Observer
+ GuitarInspectController ..> GuitarSpecs
+ GuitarInspectController --> Inventory
+ GuitarInspectController --> GuitarInspectView
+ GuitarInspectController --> Guitar
+
+
+}
+
+
+
+@enduml
