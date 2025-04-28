@@ -1,4 +1,4 @@
-- ChangesController imports a library and uses it to call system functions within the export callback
+- We are using a library that implements the generic pair class, which functions like a touple from python
 - ChartGraph instantiates a Chart object which is defined in the UI library that defines all UI components in this project.
 - StaticPanel and InputPanel are two classes defined in the UI library. InputPanel sends a callback when the value within it is overwritten.
 - ChartGraph is a class defined in the UI library that renders a Chart on a window.

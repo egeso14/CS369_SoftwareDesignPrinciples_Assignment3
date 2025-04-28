@@ -1,349 +1,270 @@
 @startuml
 
-package dataSource
-{
-    +class SaveSystem
-    {
-        -filePath: String
-        +SaveSystem(filePath: String)
-        +SaveGuitarData(data: List<List<String>>): void
-        +LoadGuitarData(): List<List<String>>
-        +SaveInventoryChangeData(List<String>): void
-        +LoadInventoryChangeData(): List<String>
-    }
+package presentation{
++class Main{
++{static} main(args: String[]): void
+-setup(): void
+}
++class GameView{
+~displayBoard(): void
+~displayEndScreen(): void
+}
++class GameController{
+-gameState: GameState
+-board: Board
+-currentTurn: Player
+-otherPlayer: Player
++Game()
+-setup(): void
+-runGameLoop(): void
+-switchPlayerTurn(): void
+-detectAndHandleSelectPiece(): void
+-detectAndHandleSelectDestination(): void
+-choosePlayMode(): void
+-chooseAIAlgorithm(): void
 }
 
-package domain
++class StatisticsView
 {
- +interface Observer
- {
-    +Update():void
- }
-
- +class Inventory
- {
-    +Inventory(saveData: List<List<String>>)
-    -saveSystem: SaveSystem
-    -guitars: List<Guitar>
-    -observers: List<Observer>
-    -changes: List<OperationSummary>
-
-    -LoadGuitars(): void
-    -LoadInventoryChanges(): void
-    +SaveGuitars(): void
-    +SaveInventoryChanges(): void
-
-    +TryAddGuitar(specs: GuitarSpecs, serialNumber: SerialNumber): bool
-    +TryRemoveGuitar(serialNumber: SerialNumber): bool
-    +SearchMatchingGuitars(criteria: SearchCriteria): List<Guitar>
-    +GetGuitars(): List<Guitar>
-    +GetInventoryChanges(): List<OperationSummary>
-    +UpdateGuitar(newSpecs: GuitarSpecs, serialNumber: SerialNumber): void
-    +AddObserver(newObserver: Observer): void
-    +UpdateObservers(): void
- }
-
- Inventory -->"*" Observer
- Inventory --> "*" Guitar
- Inventory --> "*" OperationSummary
- Inventory ..> SerialNumber
- Inventory --> SaveSystem
- Inventory ..> GuitarSpecs
- Inventory ..> SearchCriteria
- Inventory ..> InventoryOperations
-
- +enum InventoryOperations
- {
-    +ToString(): String
-    Add,
-    Remove,
-    Update
- }
-
- ~class OperationSummary
-  {
-     +OperationSummary(date: String, operation: InventoryOperations, target: Guitar,  optionalUpdatedTarget: Guitar)
-     -{final} date: String
-     -{final} operation: InventoryOperations
-     -{final} target: Guitar
-     -{final} optionalUpdatedTarget: Guitar
-     +{static} SERIALIZE(data: String): OperationSummary
-     +{static} DESERIALIZE(obj: OperationSummary): String
-  }
-  OperationSummary --> Guitar
-  OperationSummary --> InventoryOperations
-
- +class SearchCriteria
- {
-    +{static} IS_VALID_SEARCH_CRITERIA(criteria: List<String>): bool
-    +SearchCriteria(criteria: List<String>)
-    +builder: Builder
-    +guitarType: GuitarType
-    +topWood: WoodType
-    +backWood: WoodType
-    +model: String
- }
- SearchCriteria --> Builder
- SearchCriteria --> GuitarType
- SearchCriteria --> WoodType
-
- +class Guitar
- {
-    +Guitar(serialNumber: float, specs: GuitarSpecs)
-    -serialNumber: SerialNumber
-    +specs: GuitarSpecs
-    +IsMatch(criteria: SearchCriteria): bool
-    +GetSerialNumber(): SerialNumber
-    +GetSpecValueStrings(): List<String>
-    +{static} SERIALIZE(guitar: Guitar): List<String>:
-    +{static} DESERIALIZE(data: List<string>): Guitar:
- }
- Guitar --> GuitarSpecs
- Guitar --> SerialNumber
- Guitar ..> SearchCriteria
-
- +class GuitarSpecs
- {
-    +GuitarSpecs(serialNumber: SerialNumber, builder: Builder, guitarType: GuitarType, topWood: WoodType, ackWood: WoodType, price: float, model: String)
-    -serialNumber: SerialNumber
-    +builder: Builder
-    +guitarType: GuitarType
-    +topWood: WoodType
-    +backWood: WoodType
-    +model: String
-    +price: float
-    +IsMatch(specs:GuitarSpecs): bool
-    +{static} GET_GUITAR_PROPERTY_NAME_STRINGS(): List<String>
-    +{static} CAN_STRING_VALUES_CONSTRUCT_SPEC(): bool
- }
- GuitarSpecs --> WoodType
- GuitarSpecs --> Builder
- GuitarSpecs --> GuitarType
-
-
-    +class SerialNumber
-    {
-        +{static} IS_VALID(serialNumber: float): bool
-        +SerialNumber(serialNumber: float)
-        +{final} serialNumber:float
-    }
-
-+enum Builder
-{
-    +{STATIC} IS_VALID(specValueString: String, specType: Builder)
-    Fender,
-    Martin,
-    Gibson
+    +DisplayName(name: String):void
+    +DisplayData(data: List<String>): void
 }
 
-+enum GuitarType
++class StatisticsController
 {
-    +{STATIC} IS_VALID(specValueString: String, specType: GuitarType)
-    Acoustic,
-    Electric,
-    Bass
-}
-
-+enum WoodType
-{
-    +{STATIC} IS_VALID(specValueString: String, specType: WoodType)
-    Maple,
-    Cedar,
-    Alder,
-    SitkaSpruce
+    +StatisticsController(model: StatisticManager)
+    +StatisticsController(color: Color, model: StatisticManager)
+    -model: StatisticManager
+    -view: StatisticsView
+    +UpdateView(): void
 }
 
 }
 
-package presentation
-{
- +class Main
- {
-    -saveFilePath: String
-    +Main()
- }
-
-Main..>WelcomePage
-Main..>MenuController
-Main..>SaveSystem
-Main..>Inventory
-
- ~class WelcomePage
- {
-    +WelcomePage(welcomeMessage: String)
-    -welcomeMessage: String
-    +DisplayMessage(): void
- }
-
- ~class GuitarPanel
- {
-    +GuitarPanel(serialNumber: SerialNumber, indexInList: int)
-    +serialNumber: SerialNumber
-    -displayPanel: Panel
-    -renderDisplayPanel(): void
-    +AddCallback(callback: Runnable): void
- }
- GuitarPanel --> SerialNumber
-
- ~class GuitarList
- {
-    -guitarPanels: List<GuitarPanel>
-    +AddCallbackForSerialNumber(serialNumber: SerialNumber, callback: Runnable): void
-    +UpdatePanels(List<Guitar>): void
- }
- GuitarList -->"*" GuitarPanel
- GuitarList --> "*" Guitar
- GuitarList ..> SerialNumber
-
- ~class MenuView
- {
-    +MenuView(model: Inventory)
-    -model: Inventory
-
-    +addButton: Button
-    +removeButton: Button
-    +searchButton: Button
-    +confirmButton: Button
-    +backupInventoryDataButton: Button
-    +generateInventoryHistoryButton: Button
-
-    -inputArea: InputTextRegion
-    +DisplayInputArea(): void
-    +ReadFromInputArea(): List<String>
-
-    -operationResults: TextArea
-    +SetOperationResults(resultText: String): void
-
-    +Update(): void
-
-    +guitarList: GuitarList
-    -UpdateGuitarList(): void
- }
- MenuView --> Inventory
- MenuView --> GuitarList
- MenuView ..|> Observer
-
- ~class MenuController
- {
-    +MenuController(model: Inventory)
-    -model: Inventory
-    -view: MenuView
-
-    -DisplayTextInputFieldCallback(textInputForOperation: InputRequiringUIOperations): void
-    -AssignCallbackToConfirmButton(operation: InputRequiringUIOperations): void
-
-    -AddGuitarCallback(): void
-    -RemoveGuitarCallback(): void
-    -SearchGuitarCallback(): void
-    -BackupInventoryDataCallback(): void
-    -GenerateInventoryHistoryAnalysisCallback(): void
-
-    +Update():void
-
-    -UpdateGuitarListCallbacks(): void
-    -GuitarListCallback(guitar: Guitar): void
- }
-MenuController-->Inventory
-MenuController-->MenuView
-
- MenuController ..> ChartView
- MenuController ..> ReportController
- MenuController ..> GuitarInspectController
- MenuController ..> InputRequiringUIOperations
- MenuController ..> Guitar
- MenuController ..> GuitarSpecs
- MenuController ..> SearchCriteria
-
-  ~enum InputRequiringUIOperations
-  {
-     Add,
-     Remove,
-     Search,
-  }
-
-
- ~class ChartView
- {
-    +ChangesView(model: Inventory)
-    -model: Inventory
-    -chart: ChartGraph
-    +DisplayChartWindow(): void
- }
- ChartView --> Inventory
- ChartView ..>"*" OperationSummary
-
- ~class ReportView
- {
-    +ReportView(model: Inventory)
-    -model: Inventory
-    -documentArea: DocumentDisplayArea
-    +exportButton: Button
-    +DisplayReportWindow(): void
- }
- ReportView --> Inventory
- ReportView ..> "*"OperationSummary
-
-
- ~class ReportController
- {
-    +ReportController(model: Inventory)
-    -model: Inventory
-    -view: ReportView
-    -AssignExportCallback(): void
-    -ExportCallback(): void
- }
- ReportController --> Inventory
- ReportController --> ReportView
-
- ~class GuitarInspectView
- {
-    +GuitarInspectPanel(guitar: Guitar, model: Inventory)
-    -guitarBeingViewed: Guitar
-    -model: Inventory
-
-    -serialNumberPanel: StaticPanel
-    -builderPanel: StaticPanel
-    -topWoodPanel: StaticPanel
-    -backWoodPanel: StaticPanel
-    -pricePanel: StaticPanel
-    -guitarTypePanel: StaticPanel
-
-    +builderValuePanel: InputPanel
-    +topWoodValuePanel: InputPanel
-    +backWoodValuePanel: InputPanel
-    +priceValuePanel: InputPanel
-    +guitarTypeValuePanel: InputPanel
-
-    +updateOperationResults: TextArea
-    +Update(): void
-    -FetchUpdatedGuitarInfo(): void
-    +ReadAllPropertyValues(): List<String>
- }
-GuitarInspectView ..|> Observer
-GuitarInspectView --> Inventory
-GuitarInspectView --> Guitar
-
-
- ~class GuitarInspectController
- {
-    +GuitarInspectController(model: Inventory, guitar: Guitar)
-    -model: Inventory
-    -view: GuitarInspectView
-    -guitarBeingViewed: Guitar
-
-    -UpdatePropertiesCallback(): void
-
-    +Update(): void
- }
- GuitarInspectController ..|> Observer
- GuitarInspectController ..> GuitarSpecs
- GuitarInspectController --> Inventory
- GuitarInspectController --> GuitarInspectView
- GuitarInspectController --> Guitar
-
-
+package domain{
++enum GameState{
+WHITE_TURN
+BLACK_TURN
+WHITE_WIN
+BLACK_WIN
+DRAW
 }
 
++class Player
+{
+ -isAI: boolean
+ -algorithm: Algorithm
+ -myColor: Color
+ +Player()
+ +Player(algorithm: Algorithm)
+ +GetIsAI():boolean
+ +GetNextMoveAI():
+}
+
++class Algorithm
+{
+    -board: Board
+    -implementation: AlgorithmImplementation
+    +Algorithm(implementation: AlgorithmImplementation)
+    +GetMove(color: Color): Pair<Piece, Piece>
+}
++interface AlgorithmImplementation
+{
+    +GetMove(board: Board, color:Color)
+}
+
+
++class StatisticManager
+{
+    -blackStatistics: List<Statistic>
+    -whiteStatistics: List<Statistic>
+    +GetStatisticData(Color): List<Pair<String, List<String>>
+    +Update(event: Event, color:Color)
+    -BroadcastToBlack(event: Event)
+    -BroadcastToWhite(event: Event)
+}
+
+StatisticManager -->"*"Statistic
+StatisticManager ..> Color
+StatisticManager ..> Event
+
+~interface Statistic
+{
+    +Update(event: Event): void
+    +GetStatisticName(): String
+    +GetData(): List<String>
+}
+Statistic ..> Event
+
++class MoveHistoryStatistic
+{
+    +Update(event: Event)
+    +GetStatisticName(): List<String>
+    +GetData(): List<String>
+    -movesInOrder: List<Event>
+}
+MoveHistoryStatistic ..|> Statistic
+
++class NumberOfMovesStatistic
+{
+    -counter: Int
+    +Update(event: Event)
+    +GetStatisticName(): List<String>
+    +GetData(): List<String>
+    +GetNumberOfMovesData()
+}
+NumberOfMovesStatistic ..|> Statistic
+
++class NumberOfMovesPerTypeStatistic
+{
+    -numPawnMoves: Int
+    -numRookMoves: Int
+    -numBishopMoves: Int
+    -numQueenMoves: Int
+    -numKnightMoves: Int
+    -numKingMoves: Int
+    +GetStatisticName(): List<String>
+    +GetData(): List<String>
+    +Update(event: Event)
+}
+NumberOfMovesPerTypeStatistic ..|> Statistic
+NumberOfMovesPerTypeStatistic ..> Piece
+NumberOfMovesPerTypeStatistic ..> Type
+
++class Event
+{
+    +Event(from: Square, to: Square, moving: Piece, other: piece, outcome: Outcome)
+    +{static} Serialize(): String
+    +from: Square
+    +to: Square
+    +moving: Piece
+    +other: Piece
+    +outcome: Outcome
+}
+Event --> Square
+Event --> Piece
+Event --> Outcome
+
++enum Outcome
+{
+    None,
+    Eliminate
+}
+
++class Board{
+-board: Piece[][]
+-currentPlayer: Color
++Board()
++movePiece(from: Square, to: Square): boolean
+-isMoveValid(from: Square, to: Square): boolean
+-isSameColor(from: Square, to: Square): boolean
+-hasNoObstacle(from: Square, to: Square): boolean
+-checkNotMoveIntoCheck(from: Square, to: Square): boolean
+-sendEvent(): void
++switchTurn(): void
++isGameOver(): boolean
+}
+Board --> StatisticManager
+Board ..> Event
+note left of Board::hasNoObstacle
+Check whether the piece can jump.
+If no, check whether there is any piece
+(obstacle) on the way.
+end note
++abstract class Piece{
+-color: Color
+-currentLocation: Square
+-type: Type
+#canJump: boolean
++Piece(c: Color, t: Type)
++isSameColor(p: Piece): boolean
++isSameColor(c: Color): boolean
++canJump(): boolean
++toString(): String
++{abstract} isValidShape(to: Square): boolean
+}
++class Pawn{
++isValidShape(to: Square): boolean
+}
++class Queen{
++isValidShape(to: Square): boolean
+}
++class King{
+-inCheck: boolean
++King(c: Color, t: Type)
++isValidShape(to: Square): boolean
+
+
++checkCheck(boardData: Piece[][]): boolean
++isInCheckMate(boardData: Piece[][]): boolean
++updateInCheck(boardData: Piece[][]): boolean
++isInCheck(): boolean
+}
++class Rook{
++isValidShape(to: Square): boolean
+}
++class Bishop{
++isValidShape(to: Square): boolean
+}
++class Knight{
++Knight(c: Color, t: Type)
++isValidShape(to: Square): boolean
+}
++enum Color{
+BLACK,
+WHITE
+}
++enum Type{
+KING,
+QUEEN,
+PAWN,
+KNIGHT,
+BISHOP,
+ROOK
+}
++class Square{
+-rank: int
+-file: int
++Square(int, int)
++getRank(): int
++getFile(): int
+}
+}
+Main ..> GameView
+Main ..> GameController
+GameController -u-> GameView
+GameController --> "2" Player
+GameController --> Board
+GameController --> GameState
+GameController ..> Algorithm
+GameController ..> AlgorithmImplementation
+GameController..>StatisticsController
+
+StatisticsController-->StatisticManager
+StatisticsController-->StatisticsView
+StatisticsController..> Color
+
+Player --> Color
+AlgorithmImplementation ..> Color
+Algorithm .l.> Color
+Algorithm -r-> AlgorithmImplementation
+Algorithm ..> Piece
+Algorithm ..> Square
+Player --> Algorithm
+Board ..> Square
+Board -r-> "*" Piece
+Board ..> Color
+Board ..> Type
+Board ..> King
+Piece --> "1" Color
+Piece --> "1" Type
+Piece --> "1" Square
+King -u-|> Piece
+Queen -u-|> Piece
+Pawn -u-|> Piece
+Rook -u-|> Piece
+Bishop -u-|> Piece
+Knight -u-|> Piece
 
 
 @enduml
